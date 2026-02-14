@@ -1,13 +1,64 @@
 manufacturing:
   num_layers_per_part: 100
-  defect_base_rate: 0.02
-  defect_type_weights:
-    porosity: 0.4
-    cracking: 0.25
-    delamination: 0.2
-    geometric: 0.15
-  spatial_correlation: 0.3
-  severity_distribution: beta
+  layer_height_mm: 0.2
+
+  # Temperature setpoints
+  nozzle_temp_setpoint: 260.0
+  bed_temp_setpoint: 70.0
+  ambient_temp_initial: 25.0
+
+  # Dynamics
+  nozzle_drift_rate: 0.02
+  bed_decay_rate: 0.015
+
+  # Noise standard deviations
+  nozzle_noise_std: 1.5
+  bed_noise_std: 0.8
+  ambient_noise_std: 0.3
+  vibration_noise_std: 0.1
+  extrusion_noise_std: 0.05
+
+  # Ambient bounds
+  ambient_temp_min: 20.0
+  ambient_temp_max: 35.0
+
+  # Vibration model
+  vibration_base: 0.5
+  vibration_height_coeff: 0.03
+
+  # Cooling model
+  cooling_gamma: 0.1
+  cooling_height_damping: 0.05
+
+  # Adhesion sigmoid weights
+  adhesion_w_nozzle: 0.02
+  adhesion_w_bed: 0.03
+  adhesion_w_cooling: 0.01
+  adhesion_w_extrusion: 2.0
+  adhesion_w_vibration: 1.5
+  adhesion_bias: -5.0
+
+  # Stress accumulation weights
+  stress_w_thermal: 0.3
+  stress_w_adhesion: 0.3
+  stress_w_vibration: 0.2
+  stress_w_height: 0.2
+
+  # Risk sigmoid weights
+  risk_w_thermal: 2.0
+  risk_w_adhesion: 2.5
+  risk_w_vibration: 1.5
+  risk_w_height: 1.0
+  risk_w_stress: 1.5
+  risk_bias: -5.0
+
+  # Normalization constants
+  nozzle_norm_std: 3.0
+  vibration_normalizer: 1.2
+  thermal_rolling_window: 5
+
+  # Defect threshold
+  risk_threshold: 0.5
 
 detection:
   base_sensitivity: 0.85

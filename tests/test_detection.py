@@ -9,8 +9,8 @@ from hawks.manufacturing.digital_twin import ManufacturingTwin
 
 
 class TestAIDefectDetector:
-    def _make_parts(self, seed=42, defect_rate=0.1, n_parts=5):
-        config = ManufacturingConfig(defect_base_rate=defect_rate, num_layers_per_part=50)
+    def _make_parts(self, seed=42, risk_threshold=0.5, n_parts=5):
+        config = ManufacturingConfig(risk_threshold=risk_threshold, num_layers_per_part=50)
         twin = ManufacturingTwin(config, np.random.default_rng(seed))
         return twin.produce_parts(n_parts)
 
@@ -24,7 +24,7 @@ class TestAIDefectDetector:
 
     def test_high_sensitivity_catches_more(self):
         """Higher sensitivity should yield fewer missed defects."""
-        parts = self._make_parts(defect_rate=0.2, n_parts=20)
+        parts = self._make_parts(risk_threshold=0.3, n_parts=20)
 
         config_low = DetectionConfig(base_sensitivity=0.3)
         config_high = DetectionConfig(base_sensitivity=0.95)
@@ -44,7 +44,7 @@ class TestAIDefectDetector:
 
     def test_high_specificity_fewer_false_alarms(self):
         """Higher specificity should produce fewer false alarms."""
-        parts = self._make_parts(defect_rate=0.01, n_parts=20)
+        parts = self._make_parts(risk_threshold=0.7, n_parts=20)
 
         config_low = DetectionConfig(base_specificity=0.5)
         config_high = DetectionConfig(base_specificity=0.99)
@@ -60,7 +60,7 @@ class TestAIDefectDetector:
     def test_confidence_in_range(self):
         det_config = DetectionConfig()
         detector = AIDefectDetector(det_config, np.random.default_rng(42))
-        parts = self._make_parts(defect_rate=0.1, n_parts=10)
+        parts = self._make_parts(risk_threshold=0.4, n_parts=10)
 
         for part in parts:
             result = detector.inspect_part(part)

@@ -11,17 +11,67 @@ import yaml
 @dataclass
 class ManufacturingConfig:
     num_layers_per_part: int = 100
-    defect_base_rate: float = 0.02
-    defect_type_weights: dict[str, float] = field(
-        default_factory=lambda: {
-            "porosity": 0.4,
-            "cracking": 0.25,
-            "delamination": 0.2,
-            "geometric": 0.15,
-        }
-    )
-    spatial_correlation: float = 0.3
-    severity_distribution: str = "beta"
+
+    # Geometry
+    layer_height_mm: float = 0.2
+
+    # Temperature setpoints
+    nozzle_temp_setpoint: float = 260.0
+    bed_temp_setpoint: float = 70.0
+    ambient_temp_initial: float = 25.0
+
+    # Dynamics
+    nozzle_drift_rate: float = 0.02
+    bed_decay_rate: float = 0.015
+
+    # Noise standard deviations
+    nozzle_noise_std: float = 1.5
+    bed_noise_std: float = 0.8
+    ambient_noise_std: float = 0.3
+    vibration_noise_std: float = 0.1
+    extrusion_noise_std: float = 0.05
+
+    # Ambient bounds
+    ambient_temp_min: float = 20.0
+    ambient_temp_max: float = 35.0
+
+    # Vibration model
+    vibration_base: float = 0.5
+    vibration_height_coeff: float = 0.03
+
+    # Cooling model
+    cooling_gamma: float = 0.1
+    cooling_height_damping: float = 0.05
+
+    # Adhesion sigmoid weights
+    adhesion_w_nozzle: float = 0.02
+    adhesion_w_bed: float = 0.03
+    adhesion_w_cooling: float = 0.01
+    adhesion_w_extrusion: float = 2.0
+    adhesion_w_vibration: float = 1.5
+    adhesion_bias: float = -5.0
+
+    # Stress accumulation weights
+    stress_w_thermal: float = 0.3
+    stress_w_adhesion: float = 0.3
+    stress_w_vibration: float = 0.2
+    stress_w_height: float = 0.2
+
+    # Risk sigmoid weights
+    risk_w_thermal: float = 2.0
+    risk_w_adhesion: float = 2.5
+    risk_w_vibration: float = 1.5
+    risk_w_height: float = 1.0
+    risk_w_stress: float = 1.5
+    risk_bias: float = -5.0
+
+    # Normalization constants
+    nozzle_norm_std: float = 3.0
+    vibration_normalizer: float = 1.2
+    thermal_rolling_window: int = 5
+
+    # Defect threshold
+    risk_threshold: float = 0.5
 
 
 @dataclass
