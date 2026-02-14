@@ -1,5 +1,5 @@
 """AI defect detection module."""
 
-from hawks.detection.detector import AIDefectDetector
+from hawks.detection.ai_model import AIModelSimulator
 
-__all__ = ["AIDefectDetector"]
+__all__ = ["AIModelSimulator"]

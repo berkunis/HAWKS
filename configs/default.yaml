@@ -61,15 +61,10 @@ manufacturing:
   risk_threshold: 0.5
 
 detection:
-  base_sensitivity: 0.85
-  base_specificity: 0.90
-  confidence_noise_std: 0.1
-  sensitivity_by_type:
-    porosity: 0.90
-    cracking: 0.85
-    delamination: 0.80
-    geometric: 0.75
-  severity_sensitivity_curve: sigmoid
+  true_positive_rate: 0.90
+  false_positive_rate: 0.05
+  calibration_bias: 0.0
+  confidence_noise: 0.05
 
 population:
   num_operators: 20

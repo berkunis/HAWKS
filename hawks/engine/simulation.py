@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from hawks.config import HAWKSConfig
-from hawks.detection.detector import AIDefectDetector
+from hawks.detection.ai_model import AIModelSimulator
 from hawks.engine.clock import SimulationClock
 from hawks.engine.metrics import MetricsCollector
 from hawks.manufacturing.digital_twin import ManufacturingTwin
@@ -17,7 +17,7 @@ class SimulationEngine:
 
     Per-step pipeline:
     1. ManufacturingTwin.produce_parts(n)     -> list[PartResult]
-    2. AIDefectDetector.inspect_part(part)     -> list[DetectionResult]
+    2. AIModelSimulator.inspect_part(part, trace) -> (ModelPrediction, DetectionResult)
     3. OperatorPopulation.assign_operator()    -> HumanOperator
     4. HumanOperator.review_detection(det)     -> list[OperatorDecision]
     5. HumanOperator.receive_feedback(...)     (trust update)
@@ -34,7 +34,7 @@ class SimulationEngine:
             config.manufacturing,
             self._seed_manager.spawn("manufacturing"),
         )
-        self._detector = AIDefectDetector(
+        self._model = AIModelSimulator(
             config.detection,
             self._seed_manager.spawn("detection"),
         )
@@ -65,9 +65,13 @@ class SimulationEngine:
 
         # 1. Produce parts
         parts = self._twin.produce_parts(self._clock.parts_per_step)
+        traces = self._twin.get_last_traces()
 
         # 2. Inspect each part
-        detection_results = [self._detector.inspect_part(part) for part in parts]
+        detection_results = []
+        for part, trace in zip(parts, traces):
+            _prediction, det_result = self._model.inspect_part(part, trace)
+            detection_results.append(det_result)
 
         # 3-5. For each part, assign operator and review flagged detections
         all_decisions: list[OperatorDecision] = []

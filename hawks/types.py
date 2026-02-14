@@ -51,6 +51,17 @@ class DetectionResult:
 
 
 @dataclass(frozen=True)
+class ModelPrediction:
+    """AI model's probabilistic prediction for a single part."""
+
+    part_id: str
+    predicted_defect_probability: float
+    confidence_score: float
+    predicted_positive: bool
+    correct: bool
+
+
+@dataclass(frozen=True)
 class OperatorDecision:
     """A human operator's decision on a flagged detection."""
 

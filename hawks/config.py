@@ -75,19 +75,46 @@ class ManufacturingConfig:
 
 
 @dataclass
-class DetectionConfig:
-    base_sensitivity: float = 0.85
-    base_specificity: float = 0.90
-    confidence_noise_std: float = 0.1
-    sensitivity_by_type: dict[str, float] = field(
-        default_factory=lambda: {
-            "porosity": 0.90,
-            "cracking": 0.85,
-            "delamination": 0.80,
-            "geometric": 0.75,
-        }
+class AIModelConfig:
+    true_positive_rate: float = 0.90
+    false_positive_rate: float = 0.05
+    calibration_bias: float = 0.0
+    confidence_noise: float = 0.05
+    preset: str | None = None
+
+    _PRESETS: dict[str, dict[str, float]] = field(
+        default=None, init=False, repr=False
     )
-    severity_sensitivity_curve: str = "sigmoid"
+
+    def __post_init__(self) -> None:
+        presets = {
+            "well_calibrated": {
+                "true_positive_rate": 0.90,
+                "false_positive_rate": 0.05,
+                "calibration_bias": 0.0,
+                "confidence_noise": 0.05,
+            },
+            "overconfident": {
+                "true_positive_rate": 0.85,
+                "false_positive_rate": 0.10,
+                "calibration_bias": 1.5,
+                "confidence_noise": 0.02,
+            },
+            "underconfident": {
+                "true_positive_rate": 0.90,
+                "false_positive_rate": 0.05,
+                "calibration_bias": -0.5,
+                "confidence_noise": 0.15,
+            },
+        }
+        if self.preset is not None:
+            if self.preset not in presets:
+                raise ValueError(
+                    f"Unknown preset '{self.preset}'. "
+                    f"Valid presets: {list(presets.keys())}"
+                )
+            for attr, value in presets[self.preset].items():
+                object.__setattr__(self, attr, value)
 
 
 @dataclass
@@ -116,7 +143,7 @@ class ClockConfig:
 @dataclass
 class HAWKSConfig:
     manufacturing: ManufacturingConfig = field(default_factory=ManufacturingConfig)
-    detection: DetectionConfig = field(default_factory=DetectionConfig)
+    detection: AIModelConfig = field(default_factory=AIModelConfig)
     population: PopulationConfig = field(default_factory=PopulationConfig)
     clock: ClockConfig = field(default_factory=ClockConfig)
     master_seed: int = 42
@@ -128,7 +155,7 @@ class HAWKSConfig:
             data = yaml.safe_load(f)
 
         manufacturing = ManufacturingConfig(**data.get("manufacturing", {}))
-        detection = DetectionConfig(**data.get("detection", {}))
+        detection = AIModelConfig(**data.get("detection", {}))
 
         pop_data = data.get("population", {})
         op_defaults = pop_data.pop("operator_defaults", {})

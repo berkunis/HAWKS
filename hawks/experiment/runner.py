@@ -27,7 +27,7 @@ class ExperimentRunner:
         """Run Cartesian product over parameter grid, aggregate results.
 
         param_grid maps dot-separated config paths to lists of values.
-        Example: {"detection.base_sensitivity": [0.7, 0.85, 0.95]}
+        Example: {"detection.true_positive_rate": [0.7, 0.85, 0.95]}
         """
         keys = list(param_grid.keys())
         values = list(param_grid.values())
