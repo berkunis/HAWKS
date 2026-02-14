@@ -1,4 +1,4 @@
-"""Operator population — factory + collection manager."""
+"""Operator population — archetype-based factory + collection manager."""
 
 from __future__ import annotations
 
@@ -6,18 +6,52 @@ import numpy as np
 
 from hawks.config import PopulationConfig
 from hawks.operators.decision import DecisionModel
-from hawks.operators.fatigue import FatigueModel
 from hawks.operators.operator import HumanOperator
 from hawks.operators.trust import TrustModel
 from hawks.types import TimeStep
 
+ARCHETYPES: dict[str, dict[str, float]] = {
+    "conservative_skeptic": {
+        "initial_trust": 0.30,
+        "alpha": 0.05,
+        "beta": 0.20,
+        "risk_tolerance": 2.0,
+        "trust_weight": 1.5,
+        "confidence_weight": 1.0,
+        "decision_noise": 0.3,
+    },
+    "calibrated_professional": {
+        "initial_trust": 0.50,
+        "alpha": 0.10,
+        "beta": 0.10,
+        "risk_tolerance": 1.0,
+        "trust_weight": 2.0,
+        "confidence_weight": 1.5,
+        "decision_noise": 0.2,
+    },
+    "automation_biased": {
+        "initial_trust": 0.80,
+        "alpha": 0.15,
+        "beta": 0.03,
+        "risk_tolerance": 0.3,
+        "trust_weight": 3.0,
+        "confidence_weight": 2.5,
+        "decision_noise": 0.15,
+    },
+    "algorithm_averse": {
+        "initial_trust": 0.45,
+        "alpha": 0.03,
+        "beta": 0.25,
+        "risk_tolerance": 0.5,
+        "trust_weight": 1.5,
+        "confidence_weight": 0.8,
+        "decision_noise": 0.35,
+    },
+}
+
 
 class OperatorPopulation:
-    """Factory and collection manager for heterogeneous human operators.
-
-    Generates operators with individual parameters sampled from configured
-    distributions, and handles operator assignment each time step.
-    """
+    """Factory and collection manager for archetype-based human operators."""
 
     def __init__(self, config: PopulationConfig, rng: np.random.Generator) -> None:
         self._config = config
@@ -26,35 +60,57 @@ class OperatorPopulation:
         self._assignment_index = 0
 
     def create_population(self) -> None:
-        """Instantiate heterogeneous operators by sampling from distributions."""
+        """Instantiate operators from archetype definitions."""
         cfg = self._config
-        op_cfg = cfg.operator_defaults
+        mix = cfg.archetype_mix
 
-        for i in range(cfg.num_operators):
-            # Sample individual parameters from distributions
-            trust_mean, trust_std = op_cfg.trust_initial
-            initial_trust = float(np.clip(self._rng.normal(trust_mean, trust_std), 0.0, 1.0))
+        if mix is None:
+            # Default: all calibrated_professional
+            assignments = ["calibrated_professional"] * cfg.num_operators
+        else:
+            assignments = []
+            for archetype_name, count in mix.items():
+                if archetype_name not in ARCHETYPES:
+                    raise ValueError(
+                        f"Unknown archetype '{archetype_name}'. "
+                        f"Valid archetypes: {list(ARCHETYPES.keys())}"
+                    )
+                assignments.extend([archetype_name] * count)
 
-            skill_mean, skill_std = op_cfg.skill_level
-            skill = float(np.clip(self._rng.normal(skill_mean, skill_std), 0.0, 1.0))
+        for i, archetype_name in enumerate(assignments):
+            params = dict(ARCHETYPES[archetype_name])
 
-            # Small variation in fatigue rate
-            fatigue_rate = max(0.001, self._rng.normal(op_cfg.fatigue_rate, op_cfg.fatigue_rate * 0.2))
+            # Apply parameter noise if configured
+            if cfg.parameter_noise:
+                for param, noise_std in cfg.parameter_noise.items():
+                    if param in params:
+                        noisy = self._rng.normal(params[param], noise_std)
+                        if param in ("initial_trust", "alpha", "beta"):
+                            noisy = float(np.clip(noisy, 0.0, 1.0))
+                        elif param == "decision_noise":
+                            noisy = max(0.01, noisy)
+                        params[param] = float(noisy)
 
-            # Compose strategy models
-            trust_model = TrustModel(initial_trust)
-            fatigue_model = FatigueModel(fatigue_rate, op_cfg.vigilance_decrement_rate)
+            trust_model = TrustModel(
+                initial_trust=params["initial_trust"],
+                alpha=params["alpha"],
+                beta=params["beta"],
+            )
 
-            # Each operator gets its own derived RNG
             op_rng = np.random.default_rng(self._rng.integers(0, 2**32))
-            decision_model = DecisionModel(skill, op_cfg.automation_bias_strength, op_rng)
+
+            decision_model = DecisionModel(
+                trust_weight=params["trust_weight"],
+                confidence_weight=params["confidence_weight"],
+                risk_tolerance=params["risk_tolerance"],
+                decision_noise=params["decision_noise"],
+                rng=op_rng,
+            )
 
             operator = HumanOperator(
                 operator_id=f"OP-{i + 1:03d}",
                 trust_model=trust_model,
-                fatigue_model=fatigue_model,
                 decision_model=decision_model,
-                skill_level=skill,
                 rng=op_rng,
             )
             self._operators.append(operator)
@@ -71,15 +127,16 @@ class OperatorPopulation:
             return op
         elif policy == "random":
             return self._operators[int(self._rng.integers(0, len(self._operators)))]
-        elif policy == "skill_based":
-            # Pick the operator with highest skill who is least fatigued
-            return min(self._operators, key=lambda o: o.fatigue)
         else:
             raise ValueError(f"Unknown assignment policy: {policy}")
 
     def get_all_operators(self) -> list[HumanOperator]:
         """Return all operators for population-level analysis."""
         return list(self._operators)
+
+    def get_trust_histories(self) -> dict[str, list[float]]:
+        """Return trust histories for all operators."""
+        return {op.operator_id: op.trust_history for op in self._operators}
 
     def handle_shift_change(self) -> None:
         """Rest all operators on shift change."""

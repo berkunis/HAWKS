@@ -118,20 +118,12 @@ class AIModelConfig:
 
 
 @dataclass
-class OperatorConfig:
-    trust_initial: tuple[float, float] = (0.5, 0.15)
-    fatigue_rate: float = 0.01
-    skill_level: tuple[float, float] = (0.7, 0.2)
-    automation_bias_strength: float = 0.3
-    vigilance_decrement_rate: float = 0.005
-
-
-@dataclass
 class PopulationConfig:
     num_operators: int = 20
-    operator_defaults: OperatorConfig = field(default_factory=OperatorConfig)
     shift_duration_hours: float = 8.0
     assignment_policy: str = "round_robin"
+    archetype_mix: dict[str, int] | None = None
+    parameter_noise: dict[str, float] | None = None
 
 
 @dataclass
@@ -157,15 +149,7 @@ class HAWKSConfig:
         manufacturing = ManufacturingConfig(**data.get("manufacturing", {}))
         detection = AIModelConfig(**data.get("detection", {}))
 
-        pop_data = data.get("population", {})
-        op_defaults = pop_data.pop("operator_defaults", {})
-        if op_defaults:
-            # Convert trust_initial and skill_level lists to tuples
-            for key in ("trust_initial", "skill_level"):
-                if key in op_defaults:
-                    op_defaults[key] = tuple(op_defaults[key])
-            pop_data["operator_defaults"] = OperatorConfig(**op_defaults)
-        population = PopulationConfig(**pop_data)
+        population = PopulationConfig(**data.get("population", {}))
 
         clock = ClockConfig(**data.get("clock", {}))
         master_seed = data.get("master_seed", 42)

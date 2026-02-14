@@ -68,14 +68,21 @@ detection:
 
 population:
   num_operators: 20
-  operator_defaults:
-    trust_initial: [0.5, 0.15]
-    fatigue_rate: 0.01
-    skill_level: [0.7, 0.2]
-    automation_bias_strength: 0.3
-    vigilance_decrement_rate: 0.005
   shift_duration_hours: 8.0
   assignment_policy: round_robin
+  archetype_mix:
+    conservative_skeptic: 5
+    calibrated_professional: 8
+    automation_biased: 4
+    algorithm_averse: 3
+  parameter_noise:
+    initial_trust: 0.05
+    alpha: 0.02
+    beta: 0.02
+    risk_tolerance: 0.1
+    trust_weight: 0.1
+    confidence_weight: 0.1
+    decision_noise: 0.05
 
 clock:
   num_steps: 1000

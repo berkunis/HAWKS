@@ -76,7 +76,7 @@ class SimulationEngine:
         # 3-5. For each part, assign operator and review flagged detections
         all_decisions: list[OperatorDecision] = []
 
-        for part, det_result in zip(parts, detection_results):
+        for part, det_result, trace in zip(parts, detection_results, traces):
             flagged = [d for d in det_result.detections if d.flagged]
             if not flagged:
                 continue
@@ -85,7 +85,10 @@ class SimulationEngine:
 
             for detection in flagged:
                 # 4. Operator reviews detection
-                decision = operator.review_detection(detection, part.part_id, time)
+                decision = operator.review_detection(
+                    detection, part.part_id, time,
+                    structural_risk=trace.max_structural_risk,
+                )
                 all_decisions.append(decision)
 
                 # 5. Provide feedback for trust update
