@@ -1,15 +1,37 @@
 # HAWKS
 
-**Human-AI Workforce Dynamics in Safety-Critical Manufacturing Systems**
+**Human–AI Workforce Dynamics in Safety-Critical Manufacturing**
 
 ![Python](https://img.shields.io/badge/python-%3E%3D3.11-blue)
 ![Version](https://img.shields.io/badge/version-0.1.0-green)
 
 ## Overview
 
-HAWKS is an agent-based simulation framework for studying human-AI collaboration in additive manufacturing quality assurance. It models how operator trust evolves under different AI calibration levels and how heterogeneous workforces — spanning skeptics to automation enthusiasts — respond to AI-assisted defect detection. The framework combines physics-based defect generation, probabilistic AI detection, asymmetric trust dynamics, and closed-form analytical tools to produce synthetic datasets, trust equilibria, and publication-quality figures.
+HAWKS is a research framework for modeling how human trust in AI evolves
+over time in safety-critical environments.
 
-We first establish an analytically tractable mechanistic baseline before introducing neural approximations of belief dynamics.
+We formalize operator belief dynamics as a structured dynamical system and study:
+
+- Closed-form trust equilibria
+- Critical AI accuracy thresholds
+- Stability regimes under coupled human–AI feedback
+- Learnability of belief dynamics via neural surrogates
+
+The project establishes:
+
+- A mechanistic baseline (analytically tractable trust dynamics)
+- A heterogeneous population model (behavioral archetypes)
+- A neural surrogate that approximates belief evolution from low-dimensional state inputs
+
+This repo demonstrates that structured human belief updates are both
+analytically solvable and empirically learnable.
+
+## Research Questions
+
+- Under what conditions does AI accuracy induce high-trust equilibrium?
+- When does heterogeneous trust create population-level instability?
+- Can belief dynamics be approximated by neural surrogates?
+- What stability regimes emerge under adaptive AI feedback?
 
 ## Project Goals
 
@@ -77,6 +99,124 @@ hawks/
 
 ## Core Mathematical Models
 
+### Trust Model
+
+**Asymmetric update** — trust increases on correct AI predictions, decreases on incorrect:
+
+```
+T_{t+1} = T_t + α(1 − T_t)     on correct prediction
+T_{t+1} = T_t − β·T_t          on incorrect prediction
+```
+
+**Equilibrium trust** (closed-form) at AI accuracy p:
+
+```
+T*(p) = p·α / (p·α + (1−p)·β)
+```
+
+**Critical accuracy** — the AI accuracy where equilibrium trust equals 0.5:
+
+```
+p_crit = β / (α + β)
+```
+
+### Operator Archetypes
+
+| Parameter | Conservative Skeptic | Calibrated Professional | Automation Biased | Algorithm Averse |
+|---|---|---|---|---|
+| `initial_trust` | 0.30 | 0.50 | 0.80 | 0.45 |
+| `alpha` (trust gain) | 0.05 | 0.10 | 0.15 | 0.03 |
+| `beta` (trust loss) | 0.20 | 0.10 | 0.03 | 0.25 |
+| `risk_tolerance` | 2.0 | 1.0 | 0.3 | 0.5 |
+| `trust_weight` | 1.5 | 2.0 | 3.0 | 1.5 |
+| `confidence_weight` | 1.0 | 1.5 | 2.5 | 0.8 |
+| `decision_noise` | 0.3 | 0.2 | 0.15 | 0.35 |
+| **p_crit** | **0.80** | **0.50** | **0.17** | **0.89** |
+
+- **Conservative Skeptic** — Low initial trust, slow to gain trust, quick to lose it. Requires high AI accuracy (p > 0.80) to reach positive trust equilibrium.
+- **Calibrated Professional** — Balanced trust dynamics. Symmetric learning. Reaches T* = 0.5 at p = 0.50.
+- **Automation Biased** — High initial trust, fast to trust more, very slow to distrust. Maintains high trust even at low AI accuracy.
+- **Algorithm Averse** — Moderate initial trust but very resistant to building more. Quick to distrust. Requires near-perfect AI (p > 0.89) for positive equilibrium.
+
+### Decision Model
+
+Operators make accept/reject decisions via a sigmoid function:
+
+```
+logit   = w_trust·T + w_conf·C + w_risk·R + N(0, σ²)
+p_accept = σ(logit)
+action  ~ Bernoulli(p_accept)     →  "accept" or "reject"
+```
+
+### Coupled Dynamics (Adaptive AI)
+
+When AI accuracy depends on operator trust (feedback loop):
+
+```
+p_t = clamp(p_base + γ·(T_t − 0.5), 0.01, 0.99)
+```
+
+This creates four stability regimes:
+
+| Regime | Condition | Description |
+|---|---|---|
+| `HIGH_TRUST` | mean(tail) > 0.7, low variance | Stable high-trust equilibrium |
+| `LOW_TRUST` | mean(tail) < 0.3, low variance | Stable low-trust equilibrium |
+| `OSCILLATORY` | moderate variance | Trust oscillates without converging |
+| `UNSTABLE` | high variance (> 0.15) | Chaotic trust dynamics |
+
+### Neural Surrogate Model
+
+To test whether structured belief dynamics are learnable, we trained a small neural network to approximate the trust update rule:
+
+```
+T_{t+1} = f(T_t, p, α, β)
+```
+
+**Architecture:**
+
+- 4 → 32 → 16 → 1 (Sigmoid)
+- ReLU activations
+- MSE loss
+
+**Results:**
+
+- Synthetic dataset: 3,980 samples
+- Final validation MSE: 0.000205
+
+The surrogate closely matches the mechanistic belief dynamics, demonstrating that heterogeneous human trust trajectories are learnable from low-dimensional state inputs.
+
+The low validation error demonstrates that asymmetric belief updates form a smooth, learnable manifold in low-dimensional space. This suggests operator trust dynamics can be approximated by compact neural models without explicit mechanistic knowledge.
+
+### AI Detection Model
+
+**Classification** — Bernoulli draw based on confusion matrix rates:
+
+```
+predicted_positive ~ Bernoulli(TPR)   if part has defects
+predicted_positive ~ Bernoulli(FPR)   if part is clean
+```
+
+**Calibrated probability** — sigmoid of logit-transformed physics risk:
+
+```
+predicted_prob = σ(logit(risk) + calibration_bias)
+```
+
+**Confidence score:**
+
+```
+confidence = clip(|predicted_prob − 0.5| × 2 + N(0, σ²), 0, 1)
+```
+
+**Presets:**
+
+| Preset | TPR | FPR | Calibration Bias | Confidence Noise |
+|---|---|---|---|---|
+| `well_calibrated` | 0.90 | 0.05 | 0.0 | 0.05 |
+| `overconfident` | 0.85 | 0.10 | +1.5 | 0.02 |
+| `underconfident` | 0.90 | 0.05 | −0.5 | 0.15 |
+
 ### Manufacturing Physics
 
 Each part is simulated layer-by-layer with **9 state variables** per layer:
@@ -135,122 +275,6 @@ Defects are generated only when `structural_risk > risk_threshold`, with severit
 ```
 severity = clip((risk − threshold) / (1 − threshold), 0, 1)
 ```
-
-### AI Detection Model
-
-**Classification** — Bernoulli draw based on confusion matrix rates:
-
-```
-predicted_positive ~ Bernoulli(TPR)   if part has defects
-predicted_positive ~ Bernoulli(FPR)   if part is clean
-```
-
-**Calibrated probability** — sigmoid of logit-transformed physics risk:
-
-```
-predicted_prob = σ(logit(risk) + calibration_bias)
-```
-
-**Confidence score:**
-
-```
-confidence = clip(|predicted_prob − 0.5| × 2 + N(0, σ²), 0, 1)
-```
-
-**Presets:**
-
-| Preset | TPR | FPR | Calibration Bias | Confidence Noise |
-|---|---|---|---|---|
-| `well_calibrated` | 0.90 | 0.05 | 0.0 | 0.05 |
-| `overconfident` | 0.85 | 0.10 | +1.5 | 0.02 |
-| `underconfident` | 0.90 | 0.05 | −0.5 | 0.15 |
-
-### Trust Model
-
-**Asymmetric update** — trust increases on correct AI predictions, decreases on incorrect:
-
-```
-T_{t+1} = T_t + α(1 − T_t)     on correct prediction
-T_{t+1} = T_t − β·T_t          on incorrect prediction
-```
-
-**Equilibrium trust** (closed-form) at AI accuracy p:
-
-```
-T*(p) = p·α / (p·α + (1−p)·β)
-```
-
-**Critical accuracy** — the AI accuracy where equilibrium trust equals 0.5:
-
-```
-p_crit = β / (α + β)
-```
-
-### Decision Model
-
-Operators make accept/reject decisions via a sigmoid function:
-
-```
-logit   = w_trust·T + w_conf·C + w_risk·R + N(0, σ²)
-p_accept = σ(logit)
-action  ~ Bernoulli(p_accept)     →  "accept" or "reject"
-```
-
-### Operator Archetypes
-
-| Parameter | Conservative Skeptic | Calibrated Professional | Automation Biased | Algorithm Averse |
-|---|---|---|---|---|
-| `initial_trust` | 0.30 | 0.50 | 0.80 | 0.45 |
-| `alpha` (trust gain) | 0.05 | 0.10 | 0.15 | 0.03 |
-| `beta` (trust loss) | 0.20 | 0.10 | 0.03 | 0.25 |
-| `risk_tolerance` | 2.0 | 1.0 | 0.3 | 0.5 |
-| `trust_weight` | 1.5 | 2.0 | 3.0 | 1.5 |
-| `confidence_weight` | 1.0 | 1.5 | 2.5 | 0.8 |
-| `decision_noise` | 0.3 | 0.2 | 0.15 | 0.35 |
-| **p_crit** | **0.80** | **0.50** | **0.17** | **0.89** |
-
-- **Conservative Skeptic** — Low initial trust, slow to gain trust, quick to lose it. Requires high AI accuracy (p > 0.80) to reach positive trust equilibrium.
-- **Calibrated Professional** — Balanced trust dynamics. Symmetric learning. Reaches T* = 0.5 at p = 0.50.
-- **Automation Biased** — High initial trust, fast to trust more, very slow to distrust. Maintains high trust even at low AI accuracy.
-- **Algorithm Averse** — Moderate initial trust but very resistant to building more. Quick to distrust. Requires near-perfect AI (p > 0.89) for positive equilibrium.
-
-### Coupled Dynamics (Adaptive AI)
-
-When AI accuracy depends on operator trust (feedback loop):
-
-```
-p_t = clamp(p_base + γ·(T_t − 0.5), 0.01, 0.99)
-```
-
-This creates four stability regimes:
-
-| Regime | Condition | Description |
-|---|---|---|
-| `HIGH_TRUST` | mean(tail) > 0.7, low variance | Stable high-trust equilibrium |
-| `LOW_TRUST` | mean(tail) < 0.3, low variance | Stable low-trust equilibrium |
-| `OSCILLATORY` | moderate variance | Trust oscillates without converging |
-| `UNSTABLE` | high variance (> 0.15) | Chaotic trust dynamics |
-
-### Neural Surrogate Model
-
-To test whether structured belief dynamics are learnable, we trained a small neural network to approximate the trust update rule:
-
-```
-T_{t+1} = f(T_t, p, α, β)
-```
-
-**Architecture:**
-
-- 4 → 32 → 16 → 1 (Sigmoid)
-- ReLU activations
-- MSE loss
-
-**Results:**
-
-- Synthetic dataset: 3,980 samples
-- Final validation MSE: 0.000205
-
-The surrogate closely matches the mechanistic belief dynamics, demonstrating that heterogeneous human trust trajectories are learnable from low-dimensional state inputs.
 
 ## Installation
 
@@ -347,6 +371,19 @@ trust_hist, acc_hist = sa.simulate_trajectory(p_base=0.8, gamma=0.5)
 fig = sa.plot_bifurcation_heatmap()    # Regime map over (p_base, gamma)
 fig = sa.plot_trajectory_examples()    # Example trust trajectories
 report = sa.report()                   # Analytical summary
+```
+
+**Reproduce surrogate training:**
+
+```bash
+python scripts/train_surrogate.py
+```
+
+Expected output:
+```
+Dataset: 3980 samples, 4 features
+Final  train_mse≈0.0002  val_mse≈0.0002
+Model saved to models/surrogate.pt
 ```
 
 ## Configuration
