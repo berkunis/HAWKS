@@ -9,6 +9,8 @@
 
 HAWKS is an agent-based simulation framework for studying human-AI collaboration in additive manufacturing quality assurance. It models how operator trust evolves under different AI calibration levels and how heterogeneous workforces — spanning skeptics to automation enthusiasts — respond to AI-assisted defect detection. The framework combines physics-based defect generation, probabilistic AI detection, asymmetric trust dynamics, and closed-form analytical tools to produce synthetic datasets, trust equilibria, and publication-quality figures.
 
+We first establish an analytically tractable mechanistic baseline before introducing neural approximations of belief dynamics.
+
 ## Project Goals
 
 - Model physics-based defect generation in FDM 3D printing (NylonX carbon fiber) with 9 coupled state variables per layer
@@ -229,33 +231,26 @@ This creates four stability regimes:
 | `OSCILLATORY` | moderate variance | Trust oscillates without converging |
 | `UNSTABLE` | high variance (> 0.15) | Chaotic trust dynamics |
 
-We first establish an analytically tractable mechanistic baseline before introducing neural approximations.
+### Neural Surrogate Model
 
-### Neural Surrogate Extension
-
-After building the mechanistic trust-update model, we trained a small neural network to approximate the belief dynamics.
-
-**Goal:** Learn the mapping `T_t, p, α, β → T_{t+1}`.
-
-| Symbol | Meaning |
-|---|---|
-| `T_t` | Current trust |
-| `p` | AI accuracy |
-| `α` | Positive update rate |
-| `β` | Negative update rate |
-
-**Model** — A minimal MLP (`TrustSurrogate`):
+To test whether structured belief dynamics are learnable, we trained a small neural network to approximate the trust update rule:
 
 ```
-4 → 32 → 16 → 1    (ReLU activations, sigmoid output, MSE loss)
+T_{t+1} = f(T_t, p, α, β)
 ```
+
+**Architecture:**
+
+- 4 → 32 → 16 → 1 (Sigmoid)
+- ReLU activations
+- MSE loss
 
 **Results:**
 
 - Synthetic dataset: 3,980 samples
 - Final validation MSE: 0.000205
 
-The neural surrogate accurately approximates the mechanistic belief update rule. This demonstrates that structured behavioral dynamics can be learned by neural models, that mechanistic baselines provide stable supervision, and that heterogeneous operator dynamics are learnable in low-dimensional space.
+The surrogate closely matches the mechanistic belief dynamics, demonstrating that heterogeneous human trust trajectories are learnable from low-dimensional state inputs.
 
 ## Installation
 
@@ -497,3 +492,5 @@ master_seed (int)
 ```
 
 Setting the same `master_seed` guarantees identical simulation outputs. The `SyntheticDataGenerator` embeds full provenance metadata (seed, parameters, timestamp) alongside every dataset via `.meta.json` sidecars (CSV) or embedded dictionaries (PyTorch `.pt`).
+
+Future extensions include closing the loop between operator trust and adaptive AI confidence calibration.
