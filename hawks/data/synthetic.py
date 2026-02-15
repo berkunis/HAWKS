@@ -1,7 +1,11 @@
-"""Synthetic dataset generator for human–AI interaction data."""
+"""Synthetic dataset generator for human\u2013AI interaction data."""
 
 from __future__ import annotations
 
+import json
+from collections import Counter
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -19,7 +23,7 @@ from hawks.types import Detection, TimeStep
 
 
 class SyntheticDataGenerator:
-    """Generate flat, ML-ready datasets from simulated human–AI interactions.
+    """Generate flat, ML-ready datasets from simulated human\u2013AI interactions.
 
     Wraps the HAWKS physics engine, AI model, and operator archetypes into
     a single loop that produces a Pandas DataFrame (or PyTorch tensors)
@@ -79,6 +83,10 @@ class SyntheticDataGenerator:
             assignments.extend([name] * count)
         return assignments
 
+    def _resolved_archetype_mix(self) -> dict[str, int]:
+        """Return the actual {archetype: count} dict for the current config."""
+        return dict(Counter(self._build_archetype_assignments()))
+
     def _create_operators(
         self, assignments: list[str], rng: np.random.Generator
     ) -> list[tuple[HumanOperator, str]]:
@@ -111,6 +119,30 @@ class SyntheticDataGenerator:
             )
             operators.append((operator, archetype_name))
         return operators
+
+    def metadata(self) -> dict[str, Any]:
+        """Return a dict capturing every parameter needed to reproduce the dataset."""
+        ai_cfg = AIModelConfig(preset=self._ai_preset)
+        return {
+            "version": "1.0",
+            "generator": "SyntheticDataGenerator",
+            "master_seed": self._master_seed,
+            "n_operators": self._n_operators,
+            "n_steps": self._n_steps,
+            "n_interactions": self._n_operators * self._n_steps,
+            "ai_preset": self._ai_preset,
+            "ai_accuracy": {
+                "true_positive_rate": ai_cfg.true_positive_rate,
+                "false_positive_rate": ai_cfg.false_positive_rate,
+                "calibration_bias": ai_cfg.calibration_bias,
+                "confidence_noise": ai_cfg.confidence_noise,
+            },
+            "archetype_distribution": self._resolved_archetype_mix(),
+            "archetype_params": {
+                name: dict(params) for name, params in ARCHETYPES.items()
+            },
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     def generate(self) -> pd.DataFrame:
         """Run the simulation and return a DataFrame with per-interaction records.
@@ -186,18 +218,23 @@ class SyntheticDataGenerator:
         df["ai_confidence"] = df["ai_confidence"].astype("float64")
         df["ai_correctness"] = df["ai_correctness"].astype("bool")
         df["operator_trust"] = df["operator_trust"].astype("float64")
+
+        df.attrs["hawks_metadata"] = self.metadata()
         return df
 
     @staticmethod
-    def to_tensors(df: pd.DataFrame) -> dict[str, Any]:
+    def to_tensors(
+        df: pd.DataFrame, metadata: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Convert a generated DataFrame to PyTorch tensors.
 
         Returns a dict with keys:
-        - features: float32 tensor (N, 4) — structural_risk, ai_confidence,
+        - features: float32 tensor (N, 4) \u2014 structural_risk, ai_confidence,
           ai_correctness, operator_trust
-        - decisions: int64 tensor (N,) — accept=0, reject=1
-        - archetypes: int64 tensor (N,) — alphabetically sorted encoding
-        - encodings: dict with label→int mappings for decisions and archetypes
+        - decisions: int64 tensor (N,) \u2014 accept=0, reject=1
+        - archetypes: int64 tensor (N,) \u2014 alphabetically sorted encoding
+        - encodings: dict with label\u2192int mappings for decisions and archetypes
+        - metadata: provenance dict (if provided or available in df.attrs)
         """
         try:
             import torch
@@ -230,7 +267,7 @@ class SyntheticDataGenerator:
             dtype=torch.int64,
         )
 
-        return {
+        result = {
             "features": features,
             "decisions": decisions,
             "archetypes": archetypes,
@@ -239,3 +276,41 @@ class SyntheticDataGenerator:
                 "archetypes": archetype_encoding,
             },
         }
+
+        # Attach metadata: explicit arg > df.attrs
+        resolved_metadata = metadata or df.attrs.get("hawks_metadata")
+        if resolved_metadata is not None:
+            result["metadata"] = resolved_metadata
+
+        return result
+
+    def save(self, path: str | Path, fmt: str = "pt") -> Path:
+        """Generate data and save to disk.
+
+        Args:
+            path: Output file path.
+            fmt: ``"pt"`` for PyTorch tensors or ``"csv"`` for CSV + sidecar JSON.
+
+        Returns:
+            The path of the primary file written.
+        """
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        df = self.generate()
+
+        if fmt == "pt":
+            import torch
+
+            tensors = self.to_tensors(df)
+            torch.save(tensors, path)
+        elif fmt == "csv":
+            df.to_csv(path, index=False)
+            meta_path = path.with_suffix(".meta.json")
+            meta_path.write_text(
+                json.dumps(df.attrs["hawks_metadata"], indent=2) + "\n"
+            )
+        else:
+            raise ValueError(f"Unknown format '{fmt}'. Use 'pt' or 'csv'.")
+
+        return path

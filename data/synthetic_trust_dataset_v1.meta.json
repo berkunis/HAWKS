@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "generator": "SyntheticDataGenerator",
+  "master_seed": 42,
+  "n_operators": 50,
+  "n_steps": 1000,
+  "n_interactions": 50000,
+  "ai_preset": "well_calibrated",
+  "ai_accuracy": {
+    "true_positive_rate": 0.9,
+    "false_positive_rate": 0.05,
+    "calibration_bias": 0.0,
+    "confidence_noise": 0.05
+  },
+  "archetype_distribution": {
+    "algorithm_averse": 13,
+    "automation_biased": 13,
+    "calibrated_professional": 12,
+    "conservative_skeptic": 12
+  },
+  "archetype_params": {
+    "conservative_skeptic": {
+      "initial_trust": 0.3,
+      "alpha": 0.05,
+      "beta": 0.2,
+      "risk_tolerance": 2.0,
+      "trust_weight": 1.5,
+      "confidence_weight": 1.0,
+      "decision_noise": 0.3
+    },
+    "calibrated_professional": {
+      "initial_trust": 0.5,
+      "alpha": 0.1,
+      "beta": 0.1,
+      "risk_tolerance": 1.0,
+      "trust_weight": 2.0,
+      "confidence_weight": 1.5,
+      "decision_noise": 0.2
+    },
+    "automation_biased": {
+      "initial_trust": 0.8,
+      "alpha": 0.15,
+      "beta": 0.03,
+      "risk_tolerance": 0.3,
+      "trust_weight": 3.0,
+      "confidence_weight": 2.5,
+      "decision_noise": 0.15
+    },
+    "algorithm_averse": {
+      "initial_trust": 0.45,
+      "alpha": 0.03,
+      "beta": 0.25,
+      "risk_tolerance": 0.5,
+      "trust_weight": 1.5,
+      "confidence_weight": 0.8,
+      "decision_noise": 0.35
+    }
+  },
+  "created_at": "2026-02-15T01:26:26.837863+00:00"
+}

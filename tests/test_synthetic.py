@@ -1,13 +1,16 @@
-"""Tests for hawks.data.synthetic — SyntheticDataGenerator."""
+"""Tests for hawks.data.synthetic \u2014 SyntheticDataGenerator."""
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from hawks.config import AIModelConfig
 from hawks.data.synthetic import SyntheticDataGenerator
 from hawks.operators.population import ARCHETYPES
 
@@ -216,3 +219,91 @@ class TestToTensors:
         with patch.dict("sys.modules", {"torch": None}):
             with pytest.raises(ImportError, match="PyTorch is required"):
                 SyntheticDataGenerator.to_tensors(sample_df)
+
+
+# ---------------------------------------------------------------------------
+# TestMetadata
+# ---------------------------------------------------------------------------
+
+
+class TestMetadata:
+    """Tests for SyntheticDataGenerator.metadata()."""
+
+    def test_metadata_keys(self) -> None:
+        gen = SyntheticDataGenerator(n_operators=4, n_steps=10, master_seed=42)
+        meta = gen.metadata()
+        expected_keys = {
+            "version",
+            "generator",
+            "master_seed",
+            "n_operators",
+            "n_steps",
+            "n_interactions",
+            "ai_preset",
+            "ai_accuracy",
+            "archetype_distribution",
+            "archetype_params",
+            "created_at",
+        }
+        assert set(meta.keys()) == expected_keys
+
+    def test_metadata_seed_recorded(self) -> None:
+        gen = SyntheticDataGenerator(n_operators=4, n_steps=10, master_seed=99)
+        meta = gen.metadata()
+        assert meta["master_seed"] == 99
+
+    def test_metadata_ai_accuracy_recorded(self) -> None:
+        gen = SyntheticDataGenerator(
+            n_operators=4, n_steps=10, ai_preset="well_calibrated", master_seed=42
+        )
+        meta = gen.metadata()
+        ai_cfg = AIModelConfig(preset="well_calibrated")
+        assert meta["ai_accuracy"]["true_positive_rate"] == ai_cfg.true_positive_rate
+        assert meta["ai_accuracy"]["false_positive_rate"] == ai_cfg.false_positive_rate
+        assert meta["ai_accuracy"]["calibration_bias"] == ai_cfg.calibration_bias
+        assert meta["ai_accuracy"]["confidence_noise"] == ai_cfg.confidence_noise
+
+    def test_metadata_archetype_distribution(self) -> None:
+        gen = SyntheticDataGenerator(n_operators=4, n_steps=5, master_seed=42)
+        meta = gen.metadata()
+        df = gen.generate()
+        # Compare metadata distribution to actual DataFrame counts (per step)
+        actual_counts = df.groupby("archetype")["step"].nunique()
+        for archetype, count in meta["archetype_distribution"].items():
+            # count is number of operators of this archetype
+            # Each operator appears once per step, so total rows = count * n_steps
+            assert len(df[df["archetype"] == archetype]) == count * 5
+
+
+# ---------------------------------------------------------------------------
+# TestSave
+# ---------------------------------------------------------------------------
+
+
+class TestSave:
+    """Tests for SyntheticDataGenerator.save()."""
+
+    def test_save_pt_contains_metadata(self, tmp_path: Path) -> None:
+        import torch
+
+        gen = SyntheticDataGenerator(n_operators=4, n_steps=5, master_seed=42)
+        out = gen.save(tmp_path / "test.pt", fmt="pt")
+        assert out.exists()
+        data = torch.load(out, weights_only=False)
+        assert "metadata" in data
+        assert data["metadata"]["master_seed"] == 42
+
+    def test_save_csv_creates_sidecar(self, tmp_path: Path) -> None:
+        gen = SyntheticDataGenerator(n_operators=4, n_steps=5, master_seed=42)
+        out = gen.save(tmp_path / "test.csv", fmt="csv")
+        assert out.exists()
+        meta_path = tmp_path / "test.meta.json"
+        assert meta_path.exists()
+        meta = json.loads(meta_path.read_text())
+        assert meta["master_seed"] == 42
+
+    def test_save_csv_roundtrip(self, tmp_path: Path) -> None:
+        gen = SyntheticDataGenerator(n_operators=4, n_steps=5, master_seed=42)
+        out = gen.save(tmp_path / "test.csv", fmt="csv")
+        df = pd.read_csv(out)
+        assert df.shape == (20, 8)
