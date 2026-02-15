@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from hawks.config import HAWKSConfig
-from hawks.experiment.runner import ExperimentRunner
+from hawks.analysis.runner import ExperimentRunner
 
 
 def main() -> None:

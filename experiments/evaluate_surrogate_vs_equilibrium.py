@@ -19,7 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import torch
 
-from hawks.experiment.trust_analysis import TrustAnalyzer, _ARCHETYPE_COLORS
+from hawks.analysis.trust_analysis import TrustAnalyzer, _ARCHETYPE_COLORS
 from hawks.models.surrogate import TrustSurrogate
 from hawks.operators.population import ARCHETYPES
 

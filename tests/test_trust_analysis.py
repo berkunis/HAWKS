@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from matplotlib.figure import Figure
 
-from hawks.experiment.trust_analysis import TrustAnalyzer
+from hawks.analysis.trust_analysis import TrustAnalyzer
 from hawks.operators.population import ARCHETYPES
 
 

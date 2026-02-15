@@ -7,7 +7,7 @@ import pytest
 from matplotlib.figure import Figure
 
 from hawks.detection.adaptive import AdaptiveAIDetector
-from hawks.experiment.adaptive_analysis import Regime, StabilityAnalyzer
+from hawks.analysis.adaptive_analysis import Regime, StabilityAnalyzer
 
 
 # ---------------------------------------------------------------------------

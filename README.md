@@ -97,7 +97,7 @@ hawks/
 │   └── bridge.py           # LLMTrustBridge — generative layer conditioned on latent trust
 ├── data/
 │   └── synthetic.py       # SyntheticDataGenerator — ML-ready dataset pipeline
-└── experiments/
+└── analysis/
     ├── runner.py           # ExperimentRunner — sweeps and replications
     ├── analysis.py         # ResultsAnalyzer — trust evolution and detection plots
     ├── trust_analysis.py   # TrustAnalyzer — closed-form equilibrium and phase diagrams
@@ -414,7 +414,7 @@ print(metrics.summary())
 **Parameter sweep:**
 
 ```python
-from hawks.experiments.runner import ExperimentRunner
+from hawks.analysis.runner import ExperimentRunner
 
 runner = ExperimentRunner()
 results = runner.run_sweep(
@@ -441,7 +441,7 @@ tensors = SyntheticDataGenerator.to_tensors(df)
 **Trust analysis (closed-form):**
 
 ```python
-from hawks.experiments.trust_analysis import TrustAnalyzer
+from hawks.analysis.trust_analysis import TrustAnalyzer
 
 analyzer = TrustAnalyzer()
 t_eq = analyzer.equilibrium_trust(alpha=0.10, beta=0.10, p=0.85)
@@ -455,7 +455,7 @@ fig = analyzer.plot_beta_sensitivity("conservative_skeptic")
 **Stability analysis (coupled dynamics):**
 
 ```python
-from hawks.experiments.adaptive_analysis import StabilityAnalyzer
+from hawks.analysis.adaptive_analysis import StabilityAnalyzer
 
 sa = StabilityAnalyzer(archetype_name="calibrated_professional", master_seed=42)
 trust_hist, acc_hist = sa.simulate_trajectory(p_base=0.8, gamma=0.5)
@@ -583,7 +583,7 @@ HAWKS/
 │   ├── llm/
 │   │   ├── __init__.py
 │   │   └── bridge.py             # LLMTrustBridge — generative layer conditioned on latent trust
-│   └── experiments/              # Sweeps, analysis, trust/stability tools
+│   └── analysis/                 # Sweeps, analysis, trust/stability tools
 ├── models/
 │   └── surrogate.pt              # Trained surrogate weights
 ├── scripts/
