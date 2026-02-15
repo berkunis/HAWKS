@@ -374,6 +374,36 @@ The `SyntheticDataGenerator` produces ML-ready datasets with full provenance tra
 | `TrustAnalyzer` | `plot_phase_diagram`, `plot_scrap_rate`, `plot_beta_sensitivity` | Equilibrium trust curves per archetype, population scrap rate vs accuracy, beta sensitivity analysis |
 | `StabilityAnalyzer` | `plot_bifurcation_heatmap`, `plot_trajectory_examples`, `report` | Regime heatmap over (p_base, gamma), example trust trajectories, analytical stability report |
 
+### Trust Phase Diagram
+
+Closed-form equilibrium trust T\*(p) for each archetype. Vertical dashed lines mark the critical accuracy p_crit where T\* = 0.5. The automation-biased archetype reaches high trust at low accuracy, while the algorithm-averse archetype requires near-perfect AI.
+
+![Trust Phase Diagram](docs/figures/phase_diagram.png)
+
+### Scrap Rate vs AI Accuracy
+
+Expected population-level scrap rate as a function of AI accuracy. Dashed lines show per-archetype rates; the solid line is the weighted population average. The shaded band spans the min–max range across archetypes.
+
+![Scrap Rate vs AI Accuracy](docs/figures/scrap_rate.png)
+
+### Beta Sensitivity
+
+How increasing the distrust rate (beta) shifts the critical accuracy threshold for the calibrated professional archetype. Higher beta requires higher AI accuracy to maintain trust above 0.5.
+
+![Beta Sensitivity](docs/figures/beta_sensitivity.png)
+
+### Bifurcation Diagram
+
+Stability regimes of coupled trust-accuracy dynamics across base accuracy (p_base) and coupling strength (gamma). Blue = stable high trust, red = stable low trust, orange = oscillatory, black = unstable.
+
+![Bifurcation Diagram](docs/figures/bifurcation_heatmap.png)
+
+### Trajectory Examples
+
+Example trust and accuracy trajectories under coupled dynamics showing three regimes: high-trust stable convergence (top), low-trust oscillatory dynamics (middle), and strong-coupling convergence (bottom).
+
+![Trajectory Examples](docs/figures/trajectory_examples.png)
+
 ## Project Structure
 
 ```
@@ -381,6 +411,8 @@ HAWKS/
 ├── configs/
 │   └── default.yaml              # Default simulation configuration
 ├── data/                         # Output directory for generated datasets
+├── docs/
+│   └── figures/                  # Publication-quality figures (5 PNGs)
 ├── hawks/                        # Main package (12 modules)
 │   ├── config.py                 # Configuration dataclasses + YAML loading
 │   ├── seed.py                   # SeedManager for reproducible RNG branching
