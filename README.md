@@ -26,6 +26,12 @@ The project establishes:
 This repo demonstrates that structured human belief updates are both
 analytically solvable and empirically learnable.
 
+### Core Contributions
+
+- Formalization of asymmetric human trust updates as a dynamical system
+- Closed-form equilibrium and critical threshold derivations
+- Empirical demonstration that belief dynamics are learnable via compact neural surrogates
+
 ## Research Questions
 
 - Under what conditions does AI accuracy induce high-trust equilibrium?
@@ -35,7 +41,7 @@ analytically solvable and empirically learnable.
 
 ## Project Goals
 
-- Model physics-based defect generation in FDM 3D printing (NylonX carbon fiber) with 9 coupled state variables per layer
+- Provide a structured environment for studying human–AI interaction in safety-critical inspection workflows
 - Simulate probabilistic AI defect detection with configurable accuracy and calibration presets
 - Model human operator trust dynamics with asymmetric learning rates (alpha/beta)
 - Study 4 behavioral archetypes and their population-level effects on manufacturing outcomes
@@ -138,6 +144,8 @@ p_crit = β / (α + β)
 - **Automation Biased** — High initial trust, fast to trust more, very slow to distrust. Maintains high trust even at low AI accuracy.
 - **Algorithm Averse** — Moderate initial trust but very resistant to building more. Quick to distrust. Requires near-perfect AI (p > 0.89) for positive equilibrium.
 
+For identical AI accuracy, heterogeneous learning asymmetries produce up to a 3× difference in long-run trust equilibrium.
+
 ### Decision Model
 
 Operators make accept/reject decisions via a sigmoid function:
@@ -187,6 +195,8 @@ T_{t+1} = f(T_t, p, α, β)
 The surrogate closely matches the mechanistic belief dynamics, demonstrating that heterogeneous human trust trajectories are learnable from low-dimensional state inputs.
 
 The low validation error demonstrates that asymmetric belief updates form a smooth, learnable manifold in low-dimensional space. This suggests operator trust dynamics can be approximated by compact neural models without explicit mechanistic knowledge.
+
+The surrogate reproduces fixed-point behavior and critical accuracy structure, indicating that belief equilibria are preserved under neural approximation.
 
 ### AI Detection Model
 
