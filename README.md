@@ -1,6 +1,6 @@
 # HAWKS
 
-**Human–AI Workforce Dynamics in Safety-Critical Manufacturing**
+**Human-AI Workforce Dynamics in Safety-Critical Manufacturing**
 
 ![Python](https://img.shields.io/badge/python-%3E%3D3.11-blue)
 ![Version](https://img.shields.io/badge/version-0.1.0-green)
@@ -10,11 +10,13 @@
 HAWKS is a research framework for modeling how human trust in AI evolves
 over time in safety-critical environments.
 
+This repository explores a structured alternative to end-to-end behavioral modeling by explicitly separating cognitive state dynamics from generative realization.
+
 We formalize operator belief dynamics as a structured dynamical system and study:
 
 - Closed-form trust equilibria
 - Critical AI accuracy thresholds
-- Stability regimes under coupled human–AI feedback
+- Stability regimes under coupled human-AI feedback
 - Learnability of belief dynamics via neural surrogates
 
 The project establishes:
@@ -41,7 +43,7 @@ analytically solvable and empirically learnable.
 
 ## Project Goals
 
-- Provide a structured environment for studying human–AI interaction in safety-critical inspection workflows
+- Provide a structured environment for studying human-AI interaction in safety-critical inspection workflows
 - Simulate probabilistic AI defect detection with configurable accuracy and calibration presets
 - Model human operator trust dynamics with asymmetric learning rates (alpha/beta)
 - Study 4 behavioral archetypes and their population-level effects on manufacturing outcomes
@@ -90,9 +92,12 @@ hawks/
 │   └── metrics.py         # MetricsCollector — append-only data recording
 ├── models/
 │   └── surrogate.py       # TrustSurrogate — minimal MLP for trust prediction
+├── llm/
+│   ├── __init__.py
+│   └── bridge.py           # LLMTrustBridge — generative layer conditioned on latent trust
 ├── data/
 │   └── synthetic.py       # SyntheticDataGenerator — ML-ready dataset pipeline
-└── experiment/
+└── experiments/
     ├── runner.py           # ExperimentRunner — sweeps and replications
     ├── analysis.py         # ResultsAnalyzer — trust evolution and detection plots
     ├── trust_analysis.py   # TrustAnalyzer — closed-form equilibrium and phase diagrams
@@ -103,11 +108,11 @@ hawks/
 
 `SeedManager` takes a single `master_seed` and deterministically spawns independent `numpy.random.Generator` instances for each component (manufacturing, detection, operators). This guarantees full reproducibility from one integer and component-level statistical independence.
 
-## 🧠 Research Architecture
+## Research Architecture
 
 HAWKS is structured as a three-layer cognitive modeling stack that separates belief dynamics from generative behavior.
 
-### 🔹 Level 1 — Closed-Form Trust Dynamics (Mechanistic Layer)
+### Level 1 — Closed-Form Trust Dynamics (Mechanistic Layer)
 
 We define operator trust as a latent cognitive state:
 
@@ -128,7 +133,7 @@ This provides interpretability and theoretical grounding.
 
 ---
 
-### 🔹 Level 2 — Neural Surrogate Approximation (Learned Manifold)
+### Level 2 — Neural Surrogate Approximation (Learned Manifold)
 
 A small MLP (`TrustSurrogate`) is trained to approximate the closed-form dynamics:
 
@@ -143,7 +148,7 @@ This bridges interpretable models with modern ML workflows.
 
 ---
 
-### 🔹 Level 3 — Generative Behavioral Surface (LLM Conditioning)
+### Level 3 — Generative Behavioral Surface (LLM Conditioning)
 
 The latent trust state T is used to condition a generative model:
 
@@ -158,11 +163,13 @@ This cleanly separates:
 - Cognitive state evolution (structured)
 - Behavioral realization (generative)
 
-As a result, cognition remains interpretable even when behavior is modeled using foundation models.
+The latent trust variable remains fully observable and analyzable,
+while the LLM operates strictly as a conditional behavioral generator.
+This preserves interpretability at the cognitive state level.
 
 ---
 
-## 🎯 Design Philosophy
+## Design Philosophy
 
 Rather than using an LLM to implicitly learn human behavior end-to-end, HAWKS:
 
@@ -193,7 +200,7 @@ T_{t+1} = T_t − β·T_t          on incorrect prediction
 T*(p) = p·α / (p·α + (1−p)·β)
 ```
 
-The uncoupled system admits a unique globally stable fixed point.
+The uncoupled system admits a unique globally stable fixed point. Because the update defines a contraction mapping on [0,1] for α, β ∈ (0,1), the fixed point is globally attracting.
 
 **Critical accuracy** — the AI accuracy where equilibrium trust equals 0.5:
 
@@ -219,7 +226,7 @@ p_crit = β / (α + β)
 - **Automation Biased** — High initial trust, fast to trust more, very slow to distrust. Maintains high trust even at low AI accuracy.
 - **Algorithm Averse** — Moderate initial trust but very resistant to building more. Quick to distrust. Requires near-perfect AI (p > 0.89) for positive equilibrium.
 
-For identical AI accuracy, heterogeneous learning asymmetries produce up to a 3× difference in long-run trust equilibrium.
+For identical AI accuracy, heterogeneous learning asymmetries produce up to a 3x difference in long-run trust equilibrium.
 
 ### Decision Model
 
@@ -271,7 +278,7 @@ The surrogate closely matches the mechanistic belief dynamics, demonstrating tha
 
 The low validation error demonstrates that asymmetric belief updates form a smooth, learnable manifold in low-dimensional space. This suggests operator trust dynamics can be approximated by compact neural models without explicit mechanistic knowledge.
 
-The surrogate reproduces fixed-point behavior and critical accuracy structure, indicating that belief equilibria are preserved under neural approximation.
+The surrogate reproduces fixed-point behavior and critical accuracy structure, indicating that belief equilibria are preserved under neural approximation. See experiments/evaluate_surrogate_vs_equilibrium.py for numerical verification that the neural surrogate preserves equilibrium structure.
 
 ### AI Detection Model
 
@@ -374,7 +381,7 @@ pip install -e ".[dev]"
 pip install torch
 ```
 
-**Requirements:** Python ≥ 3.11, numpy ≥ 1.24, pandas ≥ 2.0, matplotlib ≥ 3.7, pyyaml ≥ 6.0
+**Requirements:** Python >= 3.11, numpy >= 1.24, pandas >= 2.0, matplotlib >= 3.7, pyyaml >= 6.0
 
 ## Quick Start
 
@@ -407,7 +414,7 @@ print(metrics.summary())
 **Parameter sweep:**
 
 ```python
-from hawks.experiment.runner import ExperimentRunner
+from hawks.experiments.runner import ExperimentRunner
 
 runner = ExperimentRunner()
 results = runner.run_sweep(
@@ -434,7 +441,7 @@ tensors = SyntheticDataGenerator.to_tensors(df)
 **Trust analysis (closed-form):**
 
 ```python
-from hawks.experiment.trust_analysis import TrustAnalyzer
+from hawks.experiments.trust_analysis import TrustAnalyzer
 
 analyzer = TrustAnalyzer()
 t_eq = analyzer.equilibrium_trust(alpha=0.10, beta=0.10, p=0.85)
@@ -448,7 +455,7 @@ fig = analyzer.plot_beta_sensitivity("conservative_skeptic")
 **Stability analysis (coupled dynamics):**
 
 ```python
-from hawks.experiment.adaptive_analysis import StabilityAnalyzer
+from hawks.experiments.adaptive_analysis import StabilityAnalyzer
 
 sa = StabilityAnalyzer(archetype_name="calibrated_professional", master_seed=42)
 trust_hist, acc_hist = sa.simulate_trajectory(p_base=0.8, gamma=0.5)
@@ -529,7 +536,7 @@ Closed-form equilibrium trust T\*(p) for each archetype. Vertical dashed lines m
 
 ### Scrap Rate vs AI Accuracy
 
-Expected population-level scrap rate as a function of AI accuracy. Dashed lines show per-archetype rates; the solid line is the weighted population average. The shaded band spans the min–max range across archetypes.
+Expected population-level scrap rate as a function of AI accuracy. Dashed lines show per-archetype rates; the solid line is the weighted population average. The shaded band spans the min-max range across archetypes.
 
 ![Scrap Rate vs AI Accuracy](docs/figures/scrap_rate.png)
 
@@ -573,7 +580,10 @@ HAWKS/
 │   ├── data/                     # Synthetic dataset generation
 │   ├── models/
 │   │   └── surrogate.py          # TrustSurrogate MLP (4→32→16→1)
-│   └── experiment/               # Sweeps, analysis, trust/stability tools
+│   ├── llm/
+│   │   ├── __init__.py
+│   │   └── bridge.py             # LLMTrustBridge — generative layer conditioned on latent trust
+│   └── experiments/              # Sweeps, analysis, trust/stability tools
 ├── models/
 │   └── surrogate.pt              # Trained surrogate weights
 ├── scripts/
