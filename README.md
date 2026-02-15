@@ -58,6 +58,8 @@ hawks/
 │   ├── simulation.py      # SimulationEngine — main per-step orchestrator
 │   ├── clock.py           # SimulationClock — discrete time + shift tracking
 │   └── metrics.py         # MetricsCollector — append-only data recording
+├── models/
+│   └── surrogate.py       # TrustSurrogate — minimal MLP for trust prediction
 ├── data/
 │   └── synthetic.py       # SyntheticDataGenerator — ML-ready dataset pipeline
 └── experiment/
@@ -226,6 +228,34 @@ This creates four stability regimes:
 | `LOW_TRUST` | mean(tail) < 0.3, low variance | Stable low-trust equilibrium |
 | `OSCILLATORY` | moderate variance | Trust oscillates without converging |
 | `UNSTABLE` | high variance (> 0.15) | Chaotic trust dynamics |
+
+We first establish an analytically tractable mechanistic baseline before introducing neural approximations.
+
+### Neural Surrogate Extension
+
+After building the mechanistic trust-update model, we trained a small neural network to approximate the belief dynamics.
+
+**Goal:** Learn the mapping `T_t, p, α, β → T_{t+1}`.
+
+| Symbol | Meaning |
+|---|---|
+| `T_t` | Current trust |
+| `p` | AI accuracy |
+| `α` | Positive update rate |
+| `β` | Negative update rate |
+
+**Model** — A minimal MLP (`TrustSurrogate`):
+
+```
+4 → 32 → 16 → 1    (ReLU activations, sigmoid output, MSE loss)
+```
+
+**Results:**
+
+- Synthetic dataset: 3,980 samples
+- Final validation MSE: 0.000205
+
+The neural surrogate accurately approximates the mechanistic belief update rule. This demonstrates that structured behavioral dynamics can be learned by neural models, that mechanistic baselines provide stable supervision, and that heterogeneous operator dynamics are learnable in low-dimensional space.
 
 ## Installation
 
@@ -412,7 +442,9 @@ HAWKS/
 │   └── default.yaml              # Default simulation configuration
 ├── data/                         # Output directory for generated datasets
 ├── docs/
-│   └── figures/                  # Publication-quality figures (5 PNGs)
+│   └── figures/                  # Publication-quality figures (6 PNGs)
+├── experiments/                  # Evaluation scripts
+│   └── evaluate_surrogate_vs_equilibrium.py
 ├── hawks/                        # Main package (12 modules)
 │   ├── config.py                 # Configuration dataclasses + YAML loading
 │   ├── seed.py                   # SeedManager for reproducible RNG branching
@@ -422,7 +454,11 @@ HAWKS/
 │   ├── operators/                # Trust model, decision model, archetypes
 │   ├── engine/                   # Simulation orchestrator, clock, metrics
 │   ├── data/                     # Synthetic dataset generation
+│   ├── models/
+│   │   └── surrogate.py          # TrustSurrogate MLP (4→32→16→1)
 │   └── experiment/               # Sweeps, analysis, trust/stability tools
+├── models/
+│   └── surrogate.pt              # Trained surrogate weights
 ├── scripts/
 │   └── run_experiment.py         # CLI entry point (hawks-run)
 ├── tests/                        # 7 test modules
