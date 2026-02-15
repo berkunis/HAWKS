@@ -56,7 +56,10 @@ class TrustAnalyzer:
 
         p_critical = beta / (alpha + beta).
         """
-        return beta / (alpha + beta)
+        denom = alpha + beta
+        if denom == 0.0:
+            return 0.0
+        return beta / denom
 
     def expected_scrap_rate(
         self,
