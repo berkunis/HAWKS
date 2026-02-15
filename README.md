@@ -120,6 +120,8 @@ T_{t+1} = T_t − β·T_t          on incorrect prediction
 T*(p) = p·α / (p·α + (1−p)·β)
 ```
 
+The uncoupled system admits a unique globally stable fixed point.
+
 **Critical accuracy** — the AI accuracy where equilibrium trust equals 0.5:
 
 ```
@@ -539,5 +541,11 @@ master_seed (int)
 ```
 
 Setting the same `master_seed` guarantees identical simulation outputs. The `SyntheticDataGenerator` embeds full provenance metadata (seed, parameters, timestamp) alongside every dataset via `.meta.json` sidecars (CSV) or embedded dictionaries (PyTorch `.pt`).
+
+## Limitations
+
+- Learning rates (α, β) are assumed stationary
+- Baseline AI accuracy is exogenous
+- Operators do not model AI intent or higher-order beliefs
 
 Future extensions include closing the loop between operator trust and adaptive AI confidence calibration.
