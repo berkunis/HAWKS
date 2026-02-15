@@ -103,6 +103,79 @@ hawks/
 
 `SeedManager` takes a single `master_seed` and deterministically spawns independent `numpy.random.Generator` instances for each component (manufacturing, detection, operators). This guarantees full reproducibility from one integer and component-level statistical independence.
 
+## 🧠 Research Architecture
+
+HAWKS is structured as a three-layer cognitive modeling stack that separates belief dynamics from generative behavior.
+
+### 🔹 Level 1 — Closed-Form Trust Dynamics (Mechanistic Layer)
+
+We define operator trust as a latent cognitive state:
+
+T_{t+1} = f(T_t, p, α, β)
+
+Where:
+- T_t = current trust
+- p = AI performance signal
+- α, β = adaptation parameters
+
+This layer:
+- Is deterministic
+- Has interpretable dynamics
+- Allows fixed-point and stability analysis
+- Encodes behavioral science assumptions explicitly
+
+This provides interpretability and theoretical grounding.
+
+---
+
+### 🔹 Level 2 — Neural Surrogate Approximation (Learned Manifold)
+
+A small MLP (`TrustSurrogate`) is trained to approximate the closed-form dynamics:
+
+f_mech ≈ f_neural
+
+The surrogate:
+- Learns belief state transitions
+- Demonstrates that trust dynamics are learnable
+- Enables fast inference and scalable experimentation
+
+This bridges interpretable models with modern ML workflows.
+
+---
+
+### 🔹 Level 3 — Generative Behavioral Surface (LLM Conditioning)
+
+The latent trust state T is used to condition a generative model:
+
+p(response | prompt, T)
+
+The LLM produces:
+- belief_statement
+- justification
+- decision (accept / reject)
+
+This cleanly separates:
+- Cognitive state evolution (structured)
+- Behavioral realization (generative)
+
+As a result, cognition remains interpretable even when behavior is modeled using foundation models.
+
+---
+
+## 🎯 Design Philosophy
+
+Rather than using an LLM to implicitly learn human behavior end-to-end, HAWKS:
+
+1. Explicitly models belief dynamics
+2. Learns a neural approximation of those dynamics
+3. Conditions generative behavior on a structured latent cognitive state
+
+This modular separation enables:
+- Interpretability
+- Stability analysis
+- Controlled experimentation
+- Safe integration with foundation models
+
 ## Core Mathematical Models
 
 ### Trust Model
