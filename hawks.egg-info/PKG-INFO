@@ -7,5 +7,7 @@ Requires-Dist: numpy>=1.24
 Requires-Dist: pandas>=2.0
 Requires-Dist: matplotlib>=3.7
 Requires-Dist: pyyaml>=6.0
+Provides-Extra: llm
+Requires-Dist: anthropic>=0.39; extra == "llm"
 Provides-Extra: dev
 Requires-Dist: pytest>=7.0; extra == "dev"

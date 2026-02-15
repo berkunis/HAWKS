@@ -593,6 +593,35 @@ HAWKS/
 └── README.md                     # This file
 ```
 
+## Namespace Refactor (Library vs Experiment Separation)
+
+The package `hawks/analysis/` was renamed from `hawks/experiment/` to establish a clear boundary between reusable library code and executable experiment scripts.
+
+**`hawks/analysis/`** contains reusable analytical modules that form part of the public library API. These include batch runners, trust equilibrium solvers, stability analyzers, and visualization tools. They are imported via `from hawks.analysis.<module> import <Class>`.
+
+**`experiments/`** (root-level) contains executable evaluation scripts and protocols that depend on the library but are not part of the importable API. These are run directly (e.g., `python experiments/evaluate_surrogate_vs_equilibrium.py`) and are not exposed as package exports.
+
+This separation:
+
+- Establishes clean namespace boundaries between library and application code
+- Separates theory (analytical modules) from experimentation (evaluation scripts)
+- Preserves all public APIs without behavioral changes
+- Does not alter any module functionality
+
+All 137 tests pass after this refactor.
+
+```
+hawks/
+└── analysis/         # reusable analytical modules (importable API)
+    ├── runner.py
+    ├── analysis.py
+    ├── trust_analysis.py
+    └── adaptive_analysis.py
+
+experiments/          # executable evaluation protocols (not importable)
+└── evaluate_surrogate_vs_equilibrium.py
+```
+
 ## Testing
 
 ```bash
