@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAWKS — Three-Layer Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #ffffff;
+    color: #1a1a2e;
+    padding: 24px 32px;
+    width: 1280px;
+    margin: 0 auto;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+
+  .header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 38px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+
+  .header .subtitle {
+    font-size: 17px;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+
+  .header .subtitle span {
+    color: #059669;
+    font-weight: 700;
+  }
+
+  /* LAYER 1 = SIMULATION ENGINE */
+  .layer1-engine {
+    background: #fffbeb;
+    border: 2.5px solid #f59e0b;
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  .layer1-engine::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: #d97706;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .engine-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .engine-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .engine-left .tag {
+    background: #d97706;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 5px;
+  }
+
+  .engine-left .name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+
+  .engine-right {
+    font-size: 14px;
+    color: #92400e;
+    font-weight: 600;
+  }
+
+  .engine-desc {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 14px;
+  }
+
+  /* CONFIG ROW */
+  .config-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .config-item {
+    background: #fff;
+    border: 1.5px solid #fcd34d;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #92400e;
+  }
+
+  .config-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #d97706;
+    margin-bottom: 6px;
+  }
+
+  /* SIM LOOP */
+  .sim-loop {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .sim-step {
+    background: #ffffff;
+    border: 1.5px solid #d1d5db;
+    border-radius: 10px;
+    padding: 12px 16px;
+    text-align: center;
+    flex: 1;
+    max-width: 220px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .sim-step .num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: #d97706;
+    opacity: 0.3;
+    margin-bottom: 2px;
+  }
+
+  .sim-step .step-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 3px;
+  }
+
+  .sim-step .step-detail {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+
+  .sim-step .output-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #d97706;
+    background: #fffbeb;
+    padding: 3px 8px;
+    border-radius: 5px;
+    display: inline-block;
+    font-weight: 500;
+  }
+
+  .arrow-connect {
+    display: flex;
+    align-items: center;
+    padding: 0 5px;
+    color: #d97706;
+    font-size: 20px;
+    opacity: 0.4;
+  }
+
+  .feedback-line {
+    text-align: center;
+    font-size: 13px;
+    color: #d97706;
+    opacity: 0.6;
+    font-weight: 600;
+  }
+
+  /* OUTPUTS ROW inside Layer 1 */
+  .engine-outputs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1.5px dashed #fcd34d;
+  }
+
+  .engine-output-left {
+    display: flex;
+    gap: 10px;
+  }
+
+  .engine-chip {
+    background: #fff;
+    border: 1.5px solid #fcd34d;
+    border-radius: 8px;
+    padding: 8px 16px;
+    text-align: center;
+  }
+
+  .engine-chip .val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #d97706;
+  }
+
+  .engine-chip .lbl {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 1px;
+  }
+
+  .engine-output-right {
+    text-align: right;
+  }
+
+  .engine-output-right .math-out {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #92400e;
+    line-height: 1.7;
+  }
+
+  .engine-output-right .math-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #d97706;
+    margin-bottom: 4px;
+  }
+
+  .engine-question {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #d97706;
+    margin-top: 10px;
+  }
+
+  /* FLOW CONNECTORS */
+  .flow-connectors {
+    display: flex;
+    justify-content: center;
+    gap: 220px;
+    margin: 8px 0;
+  }
+
+  .connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .connector .line { width: 3px; height: 28px; border-radius: 2px; }
+
+  .connector .tag {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 4px;
+  }
+
+  .connector .arrow { font-size: 16px; }
+
+  .c-blue .line { background: #2563eb; }
+  .c-blue .tag { color: #2563eb; background: #eff6ff; }
+  .c-blue .arrow { color: #2563eb; }
+
+  .c-rose .line { background: #dc2626; }
+  .c-rose .tag { color: #dc2626; background: #fef2f2; }
+  .c-rose .arrow { color: #dc2626; }
+
+  /* TWO CONSUMER LAYERS */
+  .consumers {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .consumer {
+    border-radius: 12px;
+    padding: 18px;
+    flex: 1;
+    max-width: 500px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .consumer::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+  }
+
+  .c2 { background: #eff6ff; border: 2px solid #93c5fd; }
+  .c2::before { background: #2563eb; }
+
+  .c3 { background: #fef2f2; border: 2px solid #fca5a5; }
+  .c3::before { background: #dc2626; }
+
+  .consumer .layer-tag {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 2px;
+  }
+
+  .c2 .layer-tag { color: #2563eb; }
+  .c3 .layer-tag { color: #dc2626; }
+
+  .consumer h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 2px;
+  }
+
+  .consumer .tech {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 12px;
+  }
+
+  .io-group { margin-bottom: 8px; }
+
+  .io-group .io-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #9ca3af;
+    margin-bottom: 4px;
+  }
+
+  .io-group .io-box {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #374151;
+    background: rgba(255,255,255,0.8);
+    border: 1px solid #e5e7eb;
+    padding: 8px 12px;
+    border-radius: 6px;
+    line-height: 1.7;
+  }
+
+  .io-group .io-box .dim {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+
+  .tone-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 1px;
+  }
+  .tone-range {
+    color: #9ca3af;
+    font-size: 12px;
+    min-width: 72px;
+  }
+  .tone-name {
+    color: #374151;
+    font-weight: 500;
+  }
+
+  .consumer .question {
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    text-align: center;
+  }
+
+  .c2 .question { color: #2563eb; }
+  .c3 .question { color: #dc2626; }
+
+  /* NOTES */
+  .design-note {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-top: 14px;
+    padding: 8px 0;
+  }
+
+  .note-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .note-x {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #fef2f2;
+    color: #dc2626;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+  }
+
+  .note-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #ecfdf5;
+    color: #059669;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+  }
+
+  .note-text { color: #6b7280; }
+
+  /* INSIGHT */
+  .insight-bar {
+    text-align: center;
+    margin-top: 10px;
+    padding: 14px 24px;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+  }
+
+  .insight-bar .main {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+
+  .insight-bar .main span { color: #059669; }
+
+  .insight-bar .sub {
+    font-size: 16px;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+
+  .gold { color: #d97706; font-weight: 700; }
+  .blue { color: #2563eb; font-weight: 700; }
+  .rose { color: #dc2626; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>HAWKS — Three-Layer Architecture</h1>
+  <p class="subtitle">How data flows between layers · <span>T</span> (trust) is the shared language</p>
+</div>
+
+<!-- LAYER 1 = SIMULATION ENGINE (one unified box) -->
+<div class="layer1-engine">
+  <div class="engine-header">
+    <div class="engine-left">
+      <span class="tag">Layer 1 — Math</span>
+      <span class="name">Mechanistic Simulation Engine</span>
+    </div>
+    <div class="engine-right">Pure equations · no learned weights</div>
+  </div>
+
+  <div class="config-label">Config Inputs (set before simulation)</div>
+  <div class="config-row">
+    <div class="config-item">p → AI accuracy (0–1)</div>
+    <div class="config-item">α → trust gain rate</div>
+    <div class="config-item">β → trust loss rate</div>
+    <div class="config-item">archetype → sets α, β pair</div>
+  </div>
+
+  <div class="sim-loop">
+    <div class="sim-step">
+      <div class="num">1</div>
+      <div class="step-title">Fabricate Part</div>
+      <div class="step-detail">Physics engine<br>9 internal state vars</div>
+      <div class="output-tag">→ structural_risk</div>
+    </div>
+    <div class="arrow-connect">→</div>
+    <div class="sim-step">
+      <div class="num">2</div>
+      <div class="step-title">AI Inspects</div>
+      <div class="step-detail">Classify defect<br>calibrated confidence</div>
+      <div class="output-tag">→ confidence, flagged</div>
+    </div>
+    <div class="arrow-connect">→</div>
+    <div class="sim-step">
+      <div class="num">3</div>
+      <div class="step-title">Operator Decides</div>
+      <div class="step-detail">Accept or reject<br>based on T, C, R</div>
+      <div class="output-tag">→ accept / reject</div>
+    </div>
+    <div class="arrow-connect">→</div>
+    <div class="sim-step">
+      <div class="num">4</div>
+      <div class="step-title">Trust Updates</div>
+      <div class="step-detail">Correct → T + α(1−T)<br>Wrong → T − βT</div>
+      <div class="output-tag">→ T(t+1)</div>
+    </div>
+  </div>
+  <div class="feedback-line">← T(t+1) feeds back to step 3 for next iteration →</div>
+
+  <div class="engine-outputs">
+    <div class="engine-output-left">
+      <div class="engine-chip">
+        <div class="val">20,000</div>
+        <div class="lbl">rows (20 operators × 1,000 steps)</div>
+      </div>
+      <div class="engine-chip" style="text-align:left;">
+        <div class="lbl" style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#92400e; line-height:1.6;">
+          step · operator_id · archetype<br>
+          structural_risk · ai_confidence<br>
+          ai_correctness · <b>operator_trust</b> · operator_decision
+        </div>
+        <div class="lbl" style="margin-top:2px;">8 columns per row</div>
+      </div>
+    </div>
+    <div class="engine-output-right">
+      <div class="math-label">Analytical Outputs</div>
+      <div class="math-out">
+        T* = pα / (pα + (1-p)β)<br>
+        p_crit = β / (α + β)<br>
+        4 stability regimes
+      </div>
+    </div>
+  </div>
+
+  <div class="engine-question">"Where does trust go?"</div>
+</div>
+
+<!-- FLOW CONNECTORS -->
+<div class="flow-connectors">
+  <div class="connector c-blue">
+    <div class="line"></div>
+    <div class="tag">3,980 training samples from simulation data</div>
+    <div class="arrow">▾</div>
+  </div>
+  <div class="connector c-rose">
+    <div class="line"></div>
+    <div class="tag">live state each step: T, C, R → prompt</div>
+    <div class="arrow">▾</div>
+  </div>
+</div>
+
+<!-- LAYER 2 AND 3 as consumers -->
+<div class="consumers">
+  <div class="consumer c2">
+    <div class="layer-tag">Layer 2 — Network</div>
+    <h3>Neural Surrogate</h3>
+    <div class="tech">PyTorch MLP · 4→32→16→1</div>
+    <div class="io-group">
+      <div class="io-label">Inputs (4 floats from Layer 1 data)</div>
+      <div class="io-box">
+        structural_risk → [0, 1]<br>
+        ai_confidence → [0, 1]<br>
+        ai_correctness → 0 or 1<br>
+        current_trust → [0, 1]
+      </div>
+    </div>
+    <div class="io-group">
+      <div class="io-label">Output (1 float)</div>
+      <div class="io-box">
+        T̂ → predicted next trust<br>
+        MSE = 0.0002<br>
+        ~1.4% average error
+      </div>
+    </div>
+    <div class="question">"Can we learn this?"</div>
+  </div>
+
+  <div class="consumer c3">
+    <div class="layer-tag">Layer 3 — LLM</div>
+    <h3>Behavioral Bridge</h3>
+    <div class="tech">Claude Haiku · temp 0.3</div>
+    <div class="io-group">
+      <div class="io-label">Inputs (T → tone from Layer 1 state)</div>
+      <div class="io-box">
+        <div class="tone-row"><span class="tone-range">T &gt; 0.7</span><span class="tone-name">Automation Biased</span></div>
+        <div class="tone-row"><span class="tone-range">T 0.5–0.7</span><span class="tone-name">Calibrated Professional</span></div>
+        <div class="tone-row"><span class="tone-range">T 0.2–0.5</span><span class="tone-name">Conservative Skeptic</span></div>
+        <div class="tone-row"><span class="tone-range">T &lt; 0.2</span><span class="tone-name">Algorithm Averse</span></div>
+        <span class="dim">+ confidence, risk values</span>
+      </div>
+    </div>
+    <div class="io-group">
+      <div class="io-label">Output (JSON)</div>
+      <div class="io-box">
+        belief_statement → string<br>
+        justification → string<br>
+        decision → accept / reject
+      </div>
+    </div>
+    <div class="question">"What does it look like?"</div>
+  </div>
+</div>
+
+<div class="design-note">
+  <div class="note-item">
+    <div class="note-x">✕</div>
+    <span class="note-text">Layer 2 does not feed back to Layer 1</span>
+  </div>
+  <div class="note-item">
+    <div class="note-x">✕</div>
+    <span class="note-text">Layer 3 does not feed back to Layer 1</span>
+  </div>
+  <div class="note-item">
+    <div class="note-check">✓</div>
+    <span class="note-text">Deliberate — keeps mechanistic model interpretable</span>
+  </div>
+</div>
+
+<div class="insight-bar">
+  <div class="main"><span>T</span> is the shared language across all three layers</div>
+  <div class="sub"><span class="gold">Math</span> = guarantees · <span class="blue">Network</span> = scalability · <span class="rose">LLM</span> = realism</div>
+</div>
+</body>
+</html>
